@@ -1,0 +1,15 @@
+WYMAGANIA / IMPLEMENTACJA / STATUS
+Fabric 1.21.4: zaleznosci ustawione, NIE kompilowano.
+Prawy Shift: obsluga w ClientTickEvents (polling GLFW), NIE testowano.
+Z dodaj przedmiot: obsluga fokusu slotu przez mixin, NIE testowano.
+Wyglad / Rynek / O modzie: kod ekranow, NIE testowano renderowania.
+Motywy: jasny/ciemny, skala szerokosci panelu; bez nowej czcionki.
+Lista cen: edycja, zapis, usuwanie i stronicowanie.
+CFG: import/eksport JSON przez pole i schowek.
+Licencja: tylko pole lokalne, NIE system aktywacji.
+Najnowsze: detektor zoltej opcji + limit klikniec, potrzebny test.
+Czerwony/zielony: naprzemienne strony w slotach 48/50, potrzebny test.
+Zakup: limit ceny calej oferty + ID/nazwa; cena i potwierdzenie wymagaja kalibracji.
+/ah: wznowienie po zamknieciu rynku po kliknieciu zakupu.
+Szybkosc: minimum 100 ms i czekanie na zmiane ekranu, brak gwarancji serwera.
+JAR: NIE dostarczono. Zrodla + build.gradle + workflow do budowania.

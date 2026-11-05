@@ -1,0 +1,14 @@
+{
+  "server": "anarchia.gg",
+  "marketTitle": "Rynek (",
+  "priceRegex": "(?iu)^\\s*(?:»\\s*)?Cena\\s*:\\s*([0-9]+(?:[.,][0-9]{1,2})?)\\s*(?:\\$|zł|zl)?\\s*$",
+  "dark": true,
+  "scale": 1.0,
+  "delayMs": 150,
+  "reopenMs": 1000,
+  "maxSessionSpend": 100,
+  "confirmationTitle": "",
+  "confirmationSlot": -1,
+  "license": "",
+  "items": []
+}
