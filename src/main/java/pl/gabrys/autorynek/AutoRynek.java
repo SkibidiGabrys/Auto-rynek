@@ -125,7 +125,9 @@ public class AutoRynek implements ClientModInitializer {
     if(units<=0) { skipped++; continue; }
     unit=amount/units;
    }
-   for(Config.Rule r:cfg.items) if(id(st).equals(r.id)&&st.getName().getString().equals(r.name)&&unit<=r.maxPrice) {
+   String loreText=loose(String.join(" ",lore(st).stream().map(Text::getString).toList()));
+   for(Config.Rule r:cfg.items) if(id(st).equals(r.id)&&unit<=r.maxPrice
+     &&(r.enchants.isBlank()||(!loreText.isEmpty()&&loreText.contains(loose(r.enchants))))) {
     if(spent+amount>cfg.maxSessionSpend) { stop("Osiagnieto limit wydatkow sesji"); return; }
     pendingPrice=amount; pendingName=st.getName().getString(); pendingId=id(st); spent+=amount;
     status="Wyslano zakup: "+pendingName+" / "+amount+(cfg.priceMode.equals("unit")?" ("+String.format(Locale.ROOT,"%.1f",unit)+"/szt, "+units+" szt)":"");
@@ -198,6 +200,33 @@ public class AutoRynek implements ClientModInitializer {
   return b.toString();
  }
  // Lista najlepszych zakupow: najtansze na gorze, bez duplikatow tego samego przedmiotu.
+ // Import profilu: "id;cena;wlaczone;enchant;procent;lore;nazwa;ogon" - jeden wiersz = jedna regula.
+ public static int[] importProfiles(String text) {
+  int added=0,skipped=0;
+  for(String rawLine:text.replace("\r\n","\n").split("\n")) {
+   String line=rawLine.trim(); if(line.isEmpty()) continue;
+   String[] p=line.split(";",-1);
+   if(p.length<8) { skipped++; continue; }
+   String id=p[0].trim(), price=p[1].trim(), on=p[2].trim().toLowerCase(Locale.ROOT);
+   String ench=p[3].trim();
+   String name=p[6].trim();
+   if(!id.startsWith("minecraft:")) { skipped++; continue; }
+   if(!on.equals("true")&&!on.equals("1")) { skipped++; continue; }
+   double max;
+   try { max=Double.parseDouble(price.replace(',','.')); } catch(Exception e) { skipped++; continue; }
+   if(!Double.isFinite(max)||max<=0) { skipped++; continue; }
+   Config.Rule rule=new Config.Rule(id,name,max,ench);
+   cfg.items.removeIf(r->r.id.equals(id)&&r.name.equals(name)&&loose(r.enchants).equals(loose(ench)));
+   cfg.items.add(rule); added++;
+  }
+  return new int[]{added,skipped};
+ }
+ // "ochrona vi, regeneracji i," == "ochrona VI, regeneracji i" (bez wielkosci i przecinka na koncu).
+ public static String loose(String s) {
+  if(s==null) return "";
+  String out=s.toLowerCase(Locale.ROOT).replace(","," ").replaceAll("\\s+"," ").trim();
+  return out;
+ }
  private static void addHistory(String name,double unit,int units,double total) {
   String line=String.format(Locale.ROOT,"%s x%d - %,.0f/szt (razem %,.0f)",name,units,unit,total);
   history.removeIf(h->h.startsWith(name+" x"));

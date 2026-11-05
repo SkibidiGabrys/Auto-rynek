@@ -8,7 +8,7 @@ import java.util.Locale;
 public class MarketScreen extends Screen {
  private int tab=1, page=0, x,y,w,h;
  private ItemStack adding;
- private TextFieldWidget cfgText,license;
+ private TextFieldWidget cfgText,license,profileText;
  private String message="";
  private final java.util.List<String> d0=new java.util.ArrayList<>();
  public MarketScreen(ItemStack adding) { super(Text.literal("Auto Rynek Skibidi Gabrys")); this.adding=adding; }
@@ -41,6 +41,7 @@ public class MarketScreen extends Screen {
    else button("Motyw: ciemny",x+200,y+85,110,()->{AutoRynek.cfg.theme="light";save();clearAndInit();});
    button(AutoRynek.cfg.showFooter?"Stopka: wlaczona":"Stopka: wylaczona",x+20,y+184,170,()->{AutoRynek.cfg.showFooter=!AutoRynek.cfg.showFooter;save();clearAndInit();});
   } else if(tab==1) {
+   d.fill(x+10,y+64,x+w-10,y+h-100,dark?0xFF171A22:0xFFE3E8F2);
    int rows=Math.max(1,(h-170)/26),start=page*rows;
    for(int j=0;j<rows&&start+j<AutoRynek.cfg.items.size();j++) {
     var rule=AutoRynek.cfg.items.get(start+j); int rowY=y+70+j*26;
@@ -61,6 +62,21 @@ public class MarketScreen extends Screen {
     catch(Exception e) { message="Bledny kod CFG"; }
    });
    button("Kopiuj",x+w-82,y+h-64,66,()->{client.keyboard.setClipboard(Config.GSON.toJson(AutoRynek.cfg));message="CFG w schowku";});
+   // Import profilu: "id;cena;wlaczone;enchant;procent;lore;nazwa;ogon" - po jednej linii na regule.
+   profileText=field(x+16,y+h-37,Math.max(80,w-208),"");
+   profileText.setPlaceholder(Text.literal("wklej linie profilu (Ctrl+V)"));
+   button("Wgraj profil",x+w-186,y+h-37,100,()->{
+    int[] r=AutoRynek.importProfiles(profileText.getText());
+    try { AutoRynek.cfg.save(); } catch(Exception e) {}
+    message="Profil: dodano "+r[0]+", pominieto "+r[1];
+    clearAndInit();
+   });
+   button("Wklej+Wgraj",x+w-82,y+h-37,66,()->{
+    int[] r=AutoRynek.importProfiles(client.keyboard.getClipboard());
+    try { AutoRynek.cfg.save(); } catch(Exception e) {}
+    message="Ze schowka: dodano "+r[0]+", pominieto "+r[1];
+    clearAndInit();
+   });
   } else if(tab==3) {
    // Lista najlepszych (najtanszych) zakupow + przelacznik trybu ceny.
    button(AutoRynek.cfg.priceMode.equals("unit")?"Tryb: za sztuke":"Tryb: za cala oferte",x+16,y+h-91,170,()->{
@@ -98,8 +114,12 @@ public class MarketScreen extends Screen {
   int bg=dark?0xFF20232D:0xFFF1F4FA, fg=dark?0xFFF2F5FF:0xFF252936;
   int accent="purple".equals(AutoRynek.cfg.accent)?0xFF9B7BFF:("amber".equals(AutoRynek.cfg.accent)?0xFFFFB84D:0xFF53CFC4);
   d.fill(x-1,y-1,x+w+1,y+h+1,accent);d.fill(x,y,x+w,y+h,bg);
-  d.drawTextWithShadow(textRenderer,title,x+14,y+13,fg);
+  // Naglowek: pasek w kolorze akcentu i wyrazny tytul.
+  d.fill(x,y,x+w,y+26,accent);
+  d.enableScissor(x,y+26,x+w,y+h);
+  d.drawTextWithShadow(textRenderer,title,x+14,y+9,0xFF10131A);
   super.render(d,mx,my,dt);
+  d.disableScissor();
   if(adding!=null) { d.drawTextWithShadow(textRenderer,"Nazwa przedmiotu",x+20,y+73,fg); d.drawTextWithShadow(textRenderer,"Maks. cena CALEJ oferty",x+20,y+120,fg); }
   else if(tab==0) {d.drawTextWithShadow(textRenderer,"Motyw i rozmiar panelu",x+20,y+68,fg);}
   else if(tab==2) {d.drawTextWithShadow(textRenderer,"Licencja (pole lokalne, bez aktywacji)",x+20,y+80,fg);}

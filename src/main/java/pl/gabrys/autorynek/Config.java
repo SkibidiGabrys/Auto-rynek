@@ -43,6 +43,9 @@ public class Config {
  public String sortItem = "minecraft:repeater";
  public int sortSlot = 52;
  public int sortClicks = 3;
+ // Tryb szybki: krotsze odstepy miedzy akcjami. Nadal czeka na zmiane ekranu.
+ public boolean fastMode = true;
+ public String profileFormat = "id;cena;wlaczone;enchant;procent;lore;nazwa;ogon";
  public int reopenMs = 1000;
  public double maxSessionSpend = 10000;
  // Pozostawione dla zgodnosci ze starym CFG; okno zakupu rozpoznajemy po rozmiarze okna.
@@ -53,14 +56,20 @@ public class Config {
  public static class Rule {
   public String id, name;
   public double maxPrice;
+  // Enchanty z profilu, porownywane luzno (male litery, bez przecinkow na koncu).
+  public String enchants = "";
   public Rule(String id, String name, double price) { this.id=id; this.name=name; this.maxPrice=price; }
+  public Rule(String id, String name, double price, String enchants) { this(id,name,price); this.enchants=enchants==null?"":enchants.trim(); }
  }
  public static final Gson GSON=new GsonBuilder().setPrettyPrinting().create();
  public static final Path FILE=FabricLoader.getInstance().getConfigDir().resolve("auto-rynek-skibidi-gabrys.json");
  public void validate() {
   Pattern.compile(priceRegex);
   if(server==null || server.isBlank() || marketTitle==null || marketTitle.isBlank() || items==null || items.size()>500) throw new IllegalArgumentException("Bledny CFG");
-  delayMs=Math.max(100,Math.min(5000,delayMs));
+  delayMs=Math.max(60,Math.min(5000,delayMs));
+  if(fastMode&&delayMs>80) delayMs=80;
+  stableMs=Math.max(250,Math.min(5000,stableMs));
+  if(fastMode&&stableMs>350) stableMs=350;
   reopenMs=Math.max(1000,Math.min(10000,reopenMs));
   scale=Math.max(.7,Math.min(1.2,scale));
   if(!Double.isFinite(maxSessionSpend)||maxSessionSpend<=0) throw new IllegalArgumentException("Nieprawidlowy budzet");
