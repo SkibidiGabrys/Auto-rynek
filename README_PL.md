@@ -22,36 +22,50 @@ Paczka nie zawiera Gradle wrappera ani cudzych binarnych plikow.
 - Z nad slotem w dowolnym oknie ekwipunku/rynku: dodaje wskazany przedmiot.
 - Z poza oknem: dodaje przedmiot trzymany w glownej rece.
 - C poza edytorem konfiguracji: start/stop. Start jest tez w zakladce Rynek.
-- Wyglad: bialy/czarny, skala szerokosci panelu 70-120%.
+- Wyglad: bialy/czarny, motyw jasny/ciemny, akcent (morski/fiolet/bursztyn),
+  skala szerokosci panelu 70-120%, przelacznik stopki.
+- Zakupy: lista najlepszych (najtanszych za sztuke) zakupow, licznik sprawdzonych
+  ofert, licznik pominietych i suma wydana, przycisk czyszczenia listy oraz
+  przelacznik trybu ceny: za sztuke albo za cala oferte.
 - Rynek: lista z edytowalna cena, zapis i usuwanie, strony listy,
   pole na kod JSON CFG (Ctrl+V), Wczytaj CFG i Kopiuj do schowka.
 - O modzie: lokalnie zapisywane pole licencji. Nie jest to system aktywacji.
 
-Cena reguly to LIMIT CALEJ OFERTY, a nie pojedynczej sztuki. Dopasowanie obejmuje
+Cena reguly to limit zalezny od trybu: w trybie "unit" (domyslnym) mod dzieli cene
+oferty przez liczbe sztuk z ikony i porownuje z limitem ZA SZTUKE; w trybie "offer"
+porownuje cene calej oferty. Serwer NIE podaje liczby sztuk w opisie, wiec tryb
+"unit" opiera sie na liczbie wyswietlanej na ikonie w slocie - jesli ta liczba nie
+jest liczba sztuk, wroc do trybu "offer" jednym przyciskiem w zakladce Zakupy. Dopasowanie obejmuje
 identyfikator Minecraft i dokladna nazwe przedmiotu, ale nie wszystkie komponenty!
 Przedmioty o tej samej nazwie i ID, lecz innych enchantach/lore NIE sa rozrozniane.
 Nie uzywaj tego dopasowania do wartosciowych przedmiotow wymagajacych weryfikacji enchantow.
 Nie ma wbudowanej czcionki z makiety ani dokladnego odwzorowania grafiki;
 GUI uzywa fontu Minecrafta. Skala zmienia panel, nie globalna skale tekstu.
 
-## Kalibracja serwera - WYMAGANA przed rzeczywistym skupem
-Na screenach nie bylo opisu oferty z cena ani okna potwierdzenia zakupu.
-Dlatego domyslny parser ceny jest zachowawczy. Nie rozpoznaje sufiksow k/m,
-separatorow tysiecy ani niejednoznacznych kwot. Brak dopasowania = nie kupuje.
+## Kalibracja serwera - czesciowo potwierdzona
+Z prawdziwych tooltipow serwera: cena to linia "» Cena produktu: $1.65k ($1,650)",
+a okno zakupu potwierdza sie LEWYM klikiem na minecraft:lime_dye z nazwa "Zakup".
+Parser obsluguje zapis z "k", nawias z dokladna kwota oraz separatory przecinkiem
+i spacja. Nie obsluguje przyrostka "m" ani "~". Brak dopasowania = nie kupuje.
+Gdy nawias podaje inna kwote niz zapis z "k", mod NIE kupuje (dane sprzeczne).
 
 1. Otworz /ah recznie. Najedz na oferte i nacisnij Z.
 2. Uzyj Kopiuj opis do kalibracji. Porownaj rzeczywista linie ceny z priceRegex
    w pliku config/auto-rynek-skibidi-gabrys.json. Regex musi przechwytywac
    w grupie 1 cene calej oferty. Nigdy nie dopasowuj pierwszej dowolnej liczby!
-3. W sortowaniu aktywna opcja Najnowsze jest wykrywana po kolorze zoltym #FFFF55
-   w komponencie tekstu. Inny kolor/format moze wymuszac zmiane detektora.
+3. POTWIERDZONE na serwerze: sortowanie to minecraft:repeater w slocie 52 i
+   przelacza sie PRAWYM klikiem ("Kliknij PRAWYM, aby przelaczyc!"). Lista opcji:
+   Brak motywu, Najwyzszej ceny, Najnizszej ceny, Najnowsze, Najstarsze - dlatego
+   mod klika 3 razy prawym. Najnowsze rozpoznaje tez po napisie w lore (kazdy kolor).
+   Ustawienia: sortItem, sortSlot, sortClicks w pliku config.
 4. Zalozony uklad to skrzynia 6x9: oferty 0-44, sortowanie 52,
    poprzednia strona 48 (red_dye), nastepna 50 (lime_dye lub green_dye).
-5. Gdy serwer otwiera osobne potwierdzenie, automat zatrzyma sie. Domyslnie
-   confirmationTitle jest pusty i confirmationSlot = -1. Nie ma zgadywania.
-   Po sprawdzeniu faktycznego okna ustaw dokladny tytul i numer slotu 0-based.
-   Kod wymaga, zeby w oknie bylo widoczne to samo ID, nazwa i ta sama cena;
-   jesli serwer tego nie pokazuje, wymagana jest zmiana adaptera w zrodle.
+5. Okno zakupu tez nazywa sie "Rynek", dlatego rozrozniamy je po rozmiarze okna:
+   6 rzedow = lista ofert, mniejsze = zakup. W oknie zakupu mod szuka przedmiotu
+   minecraft:lime_dye z nazwa zawierajaca "zakup", sprawdza, czy widoczna cena jest
+   identyczna z cena oferty, i klika LEWYM. Przy braku zielonego lub ceny, przy
+   roznej cenie albo przy braku nazwy "zakup" automat sie zatrzymuje i nie kupuje.
+   Pola confirmationTitle/confirmationSlot sa nieuzywane (zostawione dla starego CFG).
 6. Pierwszy test: jeden tani przedmiot, maly maxSessionSpend, obserwacja reczna.
 
 ## Szybkosc i zabezpieczenia

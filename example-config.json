@@ -10,5 +10,21 @@
   "confirmationTitle": "",
   "confirmationSlot": -1,
   "license": "",
-  "items": []
+  "items": [],
+  "sortItem": "minecraft:repeater",
+  "sortSlot": 52,
+  "sortClicks": 3,
+  "pageItemNext": "minecraft:lime_dye",
+  "pageItemPrev": "minecraft:red_dye",
+  "pageSlotNext": 50,
+  "pageSlotPrev": 48,
+  "pageRightClick": false,
+  "pageWarmup": 2,
+  "pageQuietClicks": 1,
+  "stableMs": 700,
+  "priceMode": "unit",
+  "historySize": 20,
+  "theme": "dark",
+  "accent": "teal",
+  "showFooter": true
 }
