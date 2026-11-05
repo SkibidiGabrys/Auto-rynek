@@ -1,7 +1,2 @@
-pluginManagement {
-    repositories {
-        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
-        gradlePluginPortal()
-    }
-}
-rootProject.name = 'auto-rynek-skibidi-gabrys'
+pluginManagement { repositories { maven { url = 'https://maven.fabricmc.net/' }; gradlePluginPortal() } }
+rootProject.name = 'auto-rynek-skibidi-gabrys-2'

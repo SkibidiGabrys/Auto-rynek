@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "autorynek",
+  "version": "2.0",
+  "name": "Auto Rynek Skibidi Gabrys 2",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "pl.gabrys.autorynek.AutoRynek"
+    ]
+  },
+  "mixins": [
+    "autorynek.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "minecraft": "1.21.4",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

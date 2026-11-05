@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "pl.gabrys.autorynek.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "HandledAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
