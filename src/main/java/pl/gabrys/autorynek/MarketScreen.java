@@ -41,7 +41,6 @@ public class MarketScreen extends Screen {
    else button("Motyw: ciemny",x+200,y+85,110,()->{AutoRynek.cfg.theme="light";save();clearAndInit();});
    button(AutoRynek.cfg.showFooter?"Stopka: wlaczona":"Stopka: wylaczona",x+20,y+184,170,()->{AutoRynek.cfg.showFooter=!AutoRynek.cfg.showFooter;save();clearAndInit();});
   } else if(tab==1) {
-   d.fill(x+10,y+64,x+w-10,y+h-100,dark?0xFF171A22:0xFFE3E8F2);
    int rows=Math.max(1,(h-170)/26),start=page*rows;
    for(int j=0;j<rows&&start+j<AutoRynek.cfg.items.size();j++) {
     var rule=AutoRynek.cfg.items.get(start+j); int rowY=y+70+j*26;
@@ -116,6 +115,7 @@ public class MarketScreen extends Screen {
   d.fill(x-1,y-1,x+w+1,y+h+1,accent);d.fill(x,y,x+w,y+h,bg);
   // Naglowek: pasek w kolorze akcentu i wyrazny tytul.
   d.fill(x,y,x+w,y+26,accent);
+  d.fill(x+10,y+64,x+w-10,y+h-100,dark?0xFF171A22:0xFFE3E8F2);
   d.enableScissor(x,y+26,x+w,y+h);
   d.drawTextWithShadow(textRenderer,title,x+14,y+9,0xFF10131A);
   super.render(d,mx,my,dt);

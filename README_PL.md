@@ -1,4 +1,4 @@
-# Auto Rynek Skibidi Gabrys - 0.1.0 (projekt zrodlowy, NIEPRZETESTOWANY)
+# Auto Rynek Skibidi Gabrys - 2.0 (projekt zrodlowy, NIEPRZETESTOWANY)
 
 Fabric / Minecraft 1.21.4 / Java 21. To nie jest gotowy plik JAR.
 Nie przeprowadzono kompilacji ani testu w Minecraft ani na anarchia.gg.
@@ -10,7 +10,7 @@ Zainstaluj JDK 21 i Gradle 8.12, otworz katalog z build.gradle i wykonaj:
 
     gradle build
 
-Wynik: build/libs/auto-rynek-skibidi-gabrys-0.1.0.jar
+Wynik: build/libs/auto-rynek-skibidi-gabrys-2.0.jar
 Wgraj go razem z Fabric API dla 1.21.4 do katalogu mods profilu Fabric 1.21.4.
 Alternatywa: zaladuj zawartosc katalogu projektu do wlasnego repozytorium GitHub,
 uruchom workflow Build Fabric 1.21.4 w Actions i pobierz artefakt po udanym buildzie.
