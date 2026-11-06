@@ -45,6 +45,13 @@ public class Config {
  public int sortClicks = 3;
  // Tryb szybki: krotsze odstepy miedzy akcjami. Nadal czeka na zmiane ekranu.
  public boolean fastMode = true;
+ // Tempo automatu: najmniejsze mozliwe do ustawienia przez uzytkownika.
+ public int minDelayMs = 60;
+ public int maxDelayMs = 2000;
+ // Napis na srodku ekranu: sekundy wyswietlania.
+ public double hudSeconds = 1.0;
+ public String hudOn = "snajpa-on";
+ public String hudOff = "snajpa-off";
  public String profileFormat = "id;cena;wlaczone;enchant;procent;lore;nazwa;ogon";
  public int reopenMs = 1000;
  public double maxSessionSpend = 10000;
@@ -62,16 +69,19 @@ public class Config {
   public Rule(String id, String name, double price, String enchants) { this(id,name,price); this.enchants=enchants==null?"":enchants.trim(); }
  }
  public static final Gson GSON=new GsonBuilder().setPrettyPrinting().create();
- public static final Path FILE=FabricLoader.getInstance().getConfigDir().resolve("auto-rynek-skibidi-gabrys.json");
+ public static final Path FILE=FabricLoader.getInstance().getConfigDir().resolve("auto-rynek-skibidi-gabrys-2.json");
  public void validate() {
   Pattern.compile(priceRegex);
   if(server==null || server.isBlank() || marketTitle==null || marketTitle.isBlank() || items==null || items.size()>500) throw new IllegalArgumentException("Bledny CFG");
-  delayMs=Math.max(60,Math.min(5000,delayMs));
-  if(fastMode&&delayMs>80) delayMs=80;
+  minDelayMs=Math.max(50,Math.min(2000,minDelayMs));
+  maxDelayMs=Math.max(minDelayMs,Math.min(5000,maxDelayMs));
+  delayMs=Math.max(minDelayMs,Math.min(maxDelayMs,delayMs));
+  if(fastMode) delayMs=minDelayMs;
+  hudSeconds=Math.max(0.2,Math.min(5,hudSeconds));
   stableMs=Math.max(250,Math.min(5000,stableMs));
   if(fastMode&&stableMs>350) stableMs=350;
   reopenMs=Math.max(1000,Math.min(10000,reopenMs));
-  scale=Math.max(.7,Math.min(1.2,scale));
+  scale=Math.max(.5,Math.min(1.6,scale));
   if(!Double.isFinite(maxSessionSpend)||maxSessionSpend<=0) throw new IllegalArgumentException("Nieprawidlowy budzet");
   for(Rule r:items) if(r==null||r.id==null||r.name==null||!Double.isFinite(r.maxPrice)||r.maxPrice<=0) throw new IllegalArgumentException("Nieprawidlowa regula");
   if(!"unit".equals(priceMode)&&!"offer".equals(priceMode)) priceMode="unit";

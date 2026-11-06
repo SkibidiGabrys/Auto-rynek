@@ -1,6 +1,8 @@
 package pl.gabrys.autorynek;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.component.DataComponentTypes;
@@ -20,6 +22,10 @@ public class AutoRynek implements ClientModInitializer {
  public static String status="Wylaczony";
  public static double spent=0;
  public static int checked=0,skipped=0;
+ // Napis na srodku ekranu (snajpa-on / snajpa-off) przez cfg.hudSeconds.
+ public static String hudText="";
+ public static long hudUntil=0;
+ public static void flash(String text) { hudText=text; hudUntil=System.currentTimeMillis()+(long)(cfg.hudSeconds*1000); }
  // Lista najlepszych (najtanszych) zakupow: "nazwa", cena za sztuke, sztuki, kiedy.
  public static final java.util.List<String> history=new java.util.ArrayList<>();
  private static boolean resetRequested=false;
@@ -34,13 +40,22 @@ public class AutoRynek implements ClientModInitializer {
  private long stableSince=0;
  private double pendingPrice=0;
  private String pendingName="",pendingId="";
- public static void stop(String why) { running=false; status=why; }
+ public static void stop(String why) { running=false; status=why; if(!why.startsWith("Panel")) flash(cfg.hudOff); }
  public static void toggle() {
   if(running) { stop("Wylaczony"); return; }
   if(cfg.items.isEmpty()) { status="Najpierw dodaj przedmiot"; return; }
-  resetRequested=true; running=true; status="Start";
+  resetRequested=true; running=true; status="Start"; flash(cfg.hudOn);
  }
- @Override public void onInitializeClient() { ClientTickEvents.END_CLIENT_TICK.register(this::tick); }
+ @Override public void onInitializeClient() {
+ ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+ // Napis na srodku ekranu: snajpa-on / snajpa-off przez cfg.hudSeconds.
+ HudRenderCallback.EVENT.register((ctx,tickDelta)->{
+  if(hudText.isEmpty()||System.currentTimeMillis()>hudUntil) return;
+  var tr=MinecraftClient.getInstance().textRenderer;
+  int cx=(ctx.getScaledWindowWidth()-tr.getWidth(hudText))/2, cy=ctx.getScaledWindowHeight()/2;
+  ctx.drawTextWithShadow(tr,hudText,cx,cy,0xFF55FF55);
+ });
+}
  private boolean key(MinecraftClient mc,int key) { return GLFW.glfwGetKey(mc.getWindow().getHandle(),key)==GLFW.GLFW_PRESS; }
  private void tick(MinecraftClient mc) {
   boolean s=key(mc,GLFW.GLFW_KEY_RIGHT_SHIFT), zz=key(mc,GLFW.GLFW_KEY_Z), cc=key(mc,GLFW.GLFW_KEY_C);
@@ -201,6 +216,21 @@ public class AutoRynek implements ClientModInitializer {
  }
  // Lista najlepszych zakupow: najtansze na gorze, bez duplikatow tego samego przedmiotu.
  // Import profilu: "id;cena;wlaczone;enchant;procent;lore;nazwa;ogon" - jeden wiersz = jedna regula.
+ // Folder z plikiem profilu: podmieniasz plik, klikasz "Z folderu".
+ public static java.nio.file.Path profileDir() throws Exception {
+  java.nio.file.Path d=FabricLoader.getInstance().getConfigDir().resolve("autorynek");
+  java.nio.file.Files.createDirectories(d);
+  return d;
+ }
+ public static final String PROFILE_FILE="profile.txt";
+ // Wczytuje caly plik z folderu (bez limitu dlugosci pola tekstowego).
+ public static int[] importProfileFile() {
+  try {
+   java.nio.file.Path f=profileDir().resolve(PROFILE_FILE);
+   if(!java.nio.file.Files.exists(f)) { java.nio.file.Files.writeString(f,""); return new int[]{0,0}; }
+   return importProfiles(java.nio.file.Files.readString(f));
+  } catch(Exception e) { return new int[]{0,0}; }
+ }
  public static int[] importProfiles(String text) {
   int added=0,skipped=0;
   for(String rawLine:text.replace("\r\n","\n").split("\n")) {
