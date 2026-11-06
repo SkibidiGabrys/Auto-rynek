@@ -36,6 +36,7 @@ public class AutoRynek implements ClientModInitializer {
  private boolean sorted=false,forward=true,needReopen=false;
  private int pageClicks=0,quietClicks=0,sortBlind=0;
  private boolean startSorting=false,prevSortWasNewest=false;
+ public static boolean panelOpen=false;
  private int direction=-1;
  private String lastList="",sortListBefore="";
  private long stableSince=0;
@@ -58,13 +59,33 @@ public class AutoRynek implements ClientModInitializer {
  });
 }
  private boolean key(MinecraftClient mc,int key) { return GLFW.glfwGetKey(mc.getWindow().getHandle(),key)==GLFW.GLFW_PRESS; }
+ // ===== TRYB TESTOWY: klawisz V wypisuje na czacie, co mod widzi na rynku =====
+ private boolean v;
+ private void debug(MinecraftClient mc, String msg) {
+  if(mc.player!=null) mc.player.sendMessage(Text.literal("[AutoRynek] "+msg),false);
+ }
+ private void testSort(MinecraftClient mc) {
+  if(!(mc.currentScreen instanceof HandledScreen<?> screen)) { debug(mc,"Otwórz /ah i nacisnij V."); return; }
+  if(!(screen.getScreenHandler() instanceof GenericContainerScreenHandler h)) { debug(mc,"To nie okno rynku (brak skrzyni)."); return; }
+  debug(mc,"Tytul okna: '"+screen.getTitle().getString()+"' | rzedy: "+h.getRows()+" | slotow: "+screen.getScreenHandler().slots.size());
+  for(int i=0;i<screen.getScreenHandler().slots.size()-36;i++) {
+   ItemStack st=h.getSlot(i).getStack();
+   if(st.isEmpty()) continue;
+   StringBuilder sb=new StringBuilder();
+   sb.append(i).append(": ").append(id(st)).append(" x").append(st.getCount()).append(" '").append(st.getName().getString()).append("'");
+   for(Text lt:lore(st)) sb.append(" | lore: ").append(lt.getString());
+   debug(mc,sb.toString());
+  }
+ }
  private void tick(MinecraftClient mc) {
-  boolean s=key(mc,GLFW.GLFW_KEY_RIGHT_SHIFT), zz=key(mc,GLFW.GLFW_KEY_Z), cc=key(mc,GLFW.GLFW_KEY_C);
-  if(s&&!shift&&mc.player!=null) { stop("Panel otwarty - automat zatrzymany"); mc.setScreen(new MarketScreen(null)); }
+  boolean s=key(mc,GLFW.GLFW_KEY_RIGHT_SHIFT), zz=key(mc,GLFW.GLFW_KEY_Z), cc=key(mc,GLFW.GLFW_KEY_C), vv=key(mc,GLFW.GLFW_KEY_V);
+  if(vv&&!v&&mc.player!=null) testSort(mc);
+  v=vv;
+  if(s&&!shift&&mc.player!=null) { panelOpen=true; mc.setScreen(new MarketScreen(null)); }
   if(zz&&!z&&mc.player!=null&&(mc.currentScreen==null||mc.currentScreen instanceof HandledScreen<?>)) {
    ItemStack stack=mc.player.getMainHandStack();
    if(mc.currentScreen instanceof HandledScreen<?> hs) { Slot slot=((HandledAccessor)hs).autorynek$focusedSlot(); stack=slot==null?ItemStack.EMPTY:slot.getStack(); }
-   if(!stack.isEmpty()) { stop("Dodawanie przedmiotu"); mc.setScreen(new MarketScreen(stack.copy())); }
+   if(!stack.isEmpty()) { mc.setScreen(new MarketScreen(stack.copy())); }
   }
   // C: wlacz/wylacz automat. Dziala takze bez otwartego rynku - mod sam wpisze /ah.
   if(cc&&!c&&mc.player!=null&&!(mc.currentScreen instanceof MarketScreen)) {
@@ -78,6 +99,8 @@ public class AutoRynek implements ClientModInitializer {
   String address=mc.getCurrentServerEntry().address.toLowerCase(Locale.ROOT).split(":")[0];
   if(!(address.equals(cfg.server)||address.endsWith("."+cfg.server))) { stop("Inny serwer"); return; }
   long now=System.currentTimeMillis(); if(now<next) return;
+  // Panel otwarty: nie klikamy w tle, ale automat ZOSTAJE wlaczony i status widoczny.
+  if(panelOpen) { if(mc.currentScreen==null) panelOpen=false; else return; }
   if(mc.currentScreen==null) {
    if(needReopen||pendingPrice>0) { mc.getNetworkHandler().sendChatCommand("ah"); next=now+cfg.reopenMs; needReopen=false; waiting=null; sorted=false; sortAttempts=0; pageClicks=0; quietClicks=0;
     // Konserwatywne rozliczenie limitu po wyslaniu zakupu, nie deklaracja sukcesu.
