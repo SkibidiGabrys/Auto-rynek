@@ -34,7 +34,8 @@ public class AutoRynek implements ClientModInitializer {
  private String waiting=null;
  private int sortAttempts=0;
  private boolean sorted=false,forward=true,needReopen=false;
- private int pageClicks=0,quietClicks=0;
+ private int pageClicks=0,quietClicks=0,sortBlind=0;
+ private boolean startSorting=false,prevSortWasNewest=false;
  private int direction=-1;
  private String lastList="",sortListBefore="";
  private long stableSince=0;
@@ -65,7 +66,11 @@ public class AutoRynek implements ClientModInitializer {
    if(mc.currentScreen instanceof HandledScreen<?> hs) { Slot slot=((HandledAccessor)hs).autorynek$focusedSlot(); stack=slot==null?ItemStack.EMPTY:slot.getStack(); }
    if(!stack.isEmpty()) { stop("Dodawanie przedmiotu"); mc.setScreen(new MarketScreen(stack.copy())); }
   }
-  if(cc&&!c&&(mc.currentScreen==null||mc.currentScreen instanceof HandledScreen<?>)) { waiting=null; sorted=false; sortAttempts=0; pageClicks=0; quietClicks=0; pendingPrice=0; needReopen=true; toggle(); }
+  // C: wlacz/wylacz automat. Dziala takze bez otwartego rynku - mod sam wpisze /ah.
+  if(cc&&!c&&mc.player!=null&&!(mc.currentScreen instanceof MarketScreen)) {
+   waiting=null; sorted=false; sortAttempts=0; pageClicks=0; quietClicks=0; pendingPrice=0;
+   if(running) { toggle(); } else { needReopen=true; toggle(); }
+  }
   shift=s; z=zz; c=cc;
   if(!running) return;
   if(resetRequested) { waiting=null; sorted=false; sortAttempts=0; pageClicks=0; quietClicks=0; pendingPrice=0; needReopen=true; next=0; resetRequested=false; }
@@ -104,31 +109,41 @@ public class AutoRynek implements ClientModInitializer {
    if(waiting.equals(fingerprint)) { if(now-waitSince>3000) stop("Brak aktualizacji rynku po kliknieciu"); return; }
    waiting=null; pendingPrice=0;
   }
-  // Serwer: sortowanie to minecraft:repeater i przelacza sie PRAWYM klikiem.
+  // Sortowanie: przycisk minecraft:repeater, przelaczany PRAWYM klikiem.
   ItemStack sort=handler.getSlot(cfg.sortSlot).getStack();
-  if(!sorted&&!id(sort).equals(cfg.sortItem)) {
+  if(!id(sort).equals(cfg.sortItem)) {
    stop("Slot "+cfg.sortSlot+" to nie sortowanie: "+id(sort)+" ("+sort.getName().getString()+")");
    return;
   }
-  // Potwierdzenie dziala dla kazdego koloru, bo na tym serwerze aktywna pozycja
-  // jest podswietlana dopiero PO wybraniu, a nie w nieaktywnej liscie.
-  if(!sorted&&(isNewest(sort)||textContains(sort,"najnowsze"))) { sorted=true; sortAttempts=0; pageClicks=0; quietClicks=0; lastList=fingerprint(screen); stableSince=System.currentTimeMillis(); }
-  if(!sorted) {
-   if(sortAttempts>=cfg.sortClicks+1) { stop("Sortowanie: brak zmian po "+cfg.sortClicks+" kliknieciach"); return; }
-   if(sortAttempts==0) { sortListBefore=marketItems(screen); }
-   sortAttempts++; status="Sortowanie: klik "+sortAttempts+"/"+cfg.sortClicks;
+  // Czytamy z opisu, ktora pozycja jest zaznaczona (serwer podswietla ja po wybraniu).
+  String sel=selectedSort(sort);
+  if(sel!=null) {
+   sorted=sel.contains("najnowsze");
+   startSorting=!sorted;
+   if(!sorted) {
+    // Klikamy prawym, az do skutku. Liczymy proby.
+    sortAttempts++;
+    if(sortAttempts>cfg.sortMaxClicks) {
+     // Ostatnia deska ratunku: 3 kliknięcia od "Brak motywu" dają "Najnowsze".
+     if(sortBlind<cfg.sortBlindClicks) { sortBlind++; status="Sortowanie: klik na slepo "+sortBlind+"/"+cfg.sortBlindClicks+" (opis: "+sel+")"; click(mc,screen,cfg.sortSlot,now,true); return; }
+     stop("Sortowanie: nie udalo sie wybrac Najnowsze (opis: "+sel+")");
+     return;
+    }
+    status="Sortowanie: "+sortAttempts+"/"+cfg.sortMaxClicks+" (teraz: "+sel+")";
+    stableSince=now; lastList=fingerprint(screen);
+    click(mc,screen,cfg.sortSlot,now,true); return;
+   }
+   if(!prevSortWasNewest) { status="Sortowanie: Najnowsze wybrane"; stableSince=now; lastList=fingerprint(screen); }
+  } else if(!sorted) {
+   // Opisu nie da sie odczytac - klikamy 3 razy prawym (Brak motywu -> ... -> Najnowsze).
+   if(sortBlind>=cfg.sortBlindClicks) { stop("Sortowanie: brak opisu, "+cfg.sortBlindClicks+" klikow bez efektu"); return; }
+   sortBlind++; status="Sortowanie: klik "+sortBlind+"/"+cfg.sortBlindClicks+" (bez opisu)";
+   stableSince=now; lastList=fingerprint(screen);
    click(mc,screen,cfg.sortSlot,now,true); return;
   }
-  // Sortowanie wstepne: na serwerze 1. klik to "Najwyzszej ceny", a 2. zmienia liste.
-  // Zeby nie zakonczyc na zlym sortowaniu, doklikujemy, dopoki lista sie zmienia.
-  String nowList=fingerprint(screen);
-  if(!nowList.equals(lastList)) { lastList=nowList; stableSince=now; if(pageClicks<cfg.pageWarmup) { pageClicks++; status="Sortowanie: lista sie zmienia ("+pageClicks+"/"+cfg.pageWarmup+")"; click(mc,screen,cfg.sortSlot,now,true); return; } }
+  prevSortWasNewest=sorted;
+  // Krotka chwila na ustabilizowanie listy po zmianie sortowania.
   if(now-stableSince<cfg.stableMs) return;
-  if(quietClicks<cfg.pageQuietClicks) { quietClicks++; return; }
-  // Brak zmian po kliknieciu = nie wiemy, ktore sortowanie jest wybrane.
-  // Zatrzymujemy sie po 3 cichych klikach, zamiast kupowac na slepo.
-  if(pageClicks>0) { if(pageClicks>cfg.pageWarmup+2) { stop("Nie wiem, ktore sortowanie wybrane - przerwa"); return; } pageClicks++; click(mc,screen,cfg.sortSlot,now,true); return; }
-  if(marketItems(screen).equals(sortListBefore)) { stop("Lista nie zmienila sie po sortowaniu"); return; }
   for(int i=0;i<45;i++) {
    ItemStack st=handler.getSlot(i).getStack(); if(st.isEmpty()) continue;
    Double amount=price(st); if(amount==null||amount<=0) { skipped++; continue; }
@@ -150,11 +165,17 @@ public class AutoRynek implements ClientModInitializer {
     click(mc,screen,i,now); return;
    }
   }
+  // Strony. Czerwony = "Poprzednia strona" (LEWY klik), zielony = "Nastepna strona".
+  // Sprawdzamy NAZWE, zeby nie kliknac w barwnik od serca.
+  if(!sorted) return;
   int page=forward?cfg.pageSlotNext:cfg.pageSlotPrev;
-  String itemId=id(handler.getSlot(page).getStack());
-  if(!itemId.equals(forward?cfg.pageItemNext:cfg.pageItemPrev)) { stop("Nie rozpoznano przycisku strony: "+itemId); return; }
-  // Bez potwierdzonego "Najnowsze" nie skaczemy po stronach na slepo.
-  if(!isNewest(sort)&&!textContains(sort,"najnowsze")&&quietClicks==0) { stop("Strona bez potwierdzonego sortowania - przerwa"); return; }
+  ItemStack pageStack=handler.getSlot(page).getStack();
+  String itemId=id(pageStack), pageName=pageStack.getName().getString().toLowerCase(Locale.ROOT);
+  String wanted=forward?cfg.pageItemNext:cfg.pageItemPrev;
+  if(!itemId.equals(wanted)) { stop("Slot "+page+" to nie przycisk strony: "+itemId); return; }
+  if(!pageName.contains("następna")&&!pageName.contains("nastepna")&&!pageName.contains("poprzednia")) {
+   stop("Slot "+page+" nie jest strona, tylko: "+pageStack.getName().getString()); return;
+  }
   forward=!forward; click(mc,screen,page,now,cfg.pageRightClick);
  }
  private void click(MinecraftClient mc,HandledScreen<?> s,int slot,long now) { click(mc,s,slot,now,false); }
@@ -197,6 +218,25 @@ public class AutoRynek implements ClientModInitializer {
   }
   if(suffix!=null&&suffix.equalsIgnoreCase("k")) out*=1000;
   return out;
+ }
+ // Zwraca nazwe zaznaczonej pozycji sortowania (np. "Najnowsze") albo null, gdy brak podswietlenia.
+ public static String selectedSort(ItemStack s) {
+  String[] names={"brak motywu","najwyzszej ceny","najwyższej ceny","najnizszej ceny","najniższej ceny","najnowsze","najstarsze"};
+  for(Text t:lore(s)) {
+   final String[] found={null};
+   t.visit((style,part)->{
+    if(style.getColor()!=null) {
+     String low=part.toLowerCase(Locale.ROOT);
+     for(String n:names) if(low.contains(n)) found[0]=n;
+    }
+    return Optional.empty();
+   },net.minecraft.text.Style.EMPTY);
+   if(found[0]!=null) return found[0];
+  }
+  // Serwer moze tez oznaczac pozycje znakiem strzalki.
+  for(Text t:lore(s)) { String low=t.getString().toLowerCase(Locale.ROOT);
+   if(low.contains("➤")||low.contains(">")) for(String n:names) if(low.contains(n)) return n; }
+  return null;
  }
  private static boolean isNewest(ItemStack s) {
   for(Text t:lore(s)) {

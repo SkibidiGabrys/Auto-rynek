@@ -15,6 +15,7 @@ public class MarketScreen extends Screen {
  private ItemStack adding;
  private TextFieldWidget cfgText,license,profileText;
  private String message="";
+ private int messageTab=-1;
  private final List<String> rowsCache=new ArrayList<>();
  private static final String[] TABS={"Rynek","Wyglad","Czas","Zakupy","O modzie"};
 
@@ -40,7 +41,7 @@ public class MarketScreen extends Screen {
   // Zakladki: siatka, ktora sama sie dzieli na dostepna szerokosc.
   int n=TABS.length, gap=6;
   int tw=(w-2*pad-(n-1)*gap)/n;
-  for(int i=0;i<n;i++) { final int t=i; button(TABS[i], x+pad+i*(tw+gap), y+30, tw, ()->{tab=t;adding=null;clearAndInit();}); }
+  for(int i=0;i<n;i++) { final int t=i; button(TABS[i], x+pad+i*(tw+gap), y+30, tw, ()->{tab=t;adding=null;message="";rowsCache.clear();clearAndInit();}); }
 
   if(adding!=null) { addForm(); }
   else if(tab==1) { addMarket(); }
@@ -65,7 +66,7 @@ public class MarketScreen extends Screen {
    var name=field(x+pad+numW,rowY,nameW,rule.name); name.setEditable(false);
    var price=field(x+pad+numW+nameW+6,rowY,84,trim(rule.maxPrice));
    button("Zapisz", x+w-pad-58,rowY,58,()->{
-    try { double v=Double.parseDouble(price.getText().replace(',','.')); if(!Double.isFinite(v)||v<=0) throw new Exception(); rule.maxPrice=v; save(); message="Zapisano cene"; }
+    try { double v=Double.parseDouble(price.getText().replace(',','.')); if(!Double.isFinite(v)||v<=0) throw new Exception(); rule.maxPrice=v; save(); messageTab=tab; message="Zapisano cene"; }
     catch(Exception e) { message="Wpisz dodatnia cene"; }
    });
    button("X", x+w-pad-58-40,rowY,34,()->{AutoRynek.cfg.items.remove(rule);save();clearAndInit();});
@@ -82,20 +83,20 @@ public class MarketScreen extends Screen {
   profileText.setPlaceholder(Text.literal("wklej linie profilu: id;cena;wlaczone;enchant;..."));
   button("Wgraj profil", x+w-pad-224,y2,100,()->{
    int[] r=AutoRynek.importProfiles(profileText.getText());
-   save(); message="Profil: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
+   save(); messageTab=tab; message="Profil: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
   });
   button("Ze schowka", x+w-pad-120,y2,108,()->{
    int[] r=AutoRynek.importProfiles(client.keyboard.getClipboard());
-   save(); message="Ze schowka: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
+   save(); messageTab=tab; message="Ze schowka: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
   });
   // Folder na plik profilu: podmieniasz plik, klikasz "Z folderu".
   button("Folder CFG", x+pad,y1-26,110,()->{
-   try { java.nio.file.Path dir=AutoRynek.profileDir(); Util.getOperatingSystem().open(dir.toFile()); message="Folder: "+dir; }
-   catch(Exception e) { message="Nie udalo sie otworzyc folderu"; }
+   try { java.nio.file.Path dir=AutoRynek.profileDir(); Util.getOperatingSystem().open(dir.toFile()); messageTab=tab; message="Folder: config/autorynek"; }
+   catch(Exception e) { messageTab=tab; message="Nie udalo sie otworzyc folderu"; }
   });
   button("Z folderu", x+pad+114,y1-26,110,()->{
    int[] r=AutoRynek.importProfileFile();
-   save(); message="Plik: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
+   save(); messageTab=tab; message="Plik: dodano "+r[0]+", pominieto "+r[1]; clearAndInit();
   });
  }
 
@@ -177,7 +178,6 @@ public class MarketScreen extends Screen {
   d.fill(x,y,x+w,y+26,accent);
   d.drawTextWithShadow(textRenderer,title,x+pad,y+9,0xFF10131A);
 
-  d.fill(x+pad-2,y+56,x+w-pad+2,y+h-pad-54,li?0xFFE7EBF3:0xFF171A22);
 
   if(adding!=null) {
    d.drawTextWithShadow(textRenderer,"Nowy przedmiot",x+pad,y+56+6,fg);
@@ -195,6 +195,7 @@ public class MarketScreen extends Screen {
 
   super.render(d,mx,my,dt);
   if(AutoRynek.cfg.showFooter) d.drawTextWithShadow(textRenderer,"Z dodaj przedmiot | C start/stop | Prawy Shift: panel",x+pad,y+h-pad-14,fg);
+  if(messageTab!=tab) message="";
   String line=message.isEmpty()?AutoRynek.status:message;
   d.drawTextWithShadow(textRenderer,textRenderer.trimToWidth(line,w-2*pad-100),x+pad,y+h-pad-14-(AutoRynek.cfg.showFooter?10:0),0xFFFFB84D);
  }

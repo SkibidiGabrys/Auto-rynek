@@ -4,7 +4,7 @@
   "priceRegex": "(?iu)^\\s*(?:»\\s*)?Cena\\s*:\\s*([0-9]+(?:[.,][0-9]{1,2})?)\\s*(?:\\$|zł|zl)?\\s*$",
   "dark": true,
   "scale": 1.0,
-  "delayMs": 150,
+  "delayMs": 80,
   "reopenMs": 1000,
   "maxSessionSpend": 100,
   "confirmationTitle": "",
@@ -21,10 +21,16 @@
   "pageRightClick": false,
   "pageWarmup": 2,
   "pageQuietClicks": 1,
-  "stableMs": 700,
+  "stableMs": 350,
   "priceMode": "unit",
   "historySize": 20,
   "theme": "dark",
   "accent": "teal",
-  "showFooter": true
+  "showFooter": true,
+  "minDelayMs": 50,
+  "sortMaxClicks": 8,
+  "sortBlindClicks": 3,
+  "hudOn": "snajpa-on",
+  "hudOff": "snajpa-off",
+  "hudSeconds": 1.0
 }

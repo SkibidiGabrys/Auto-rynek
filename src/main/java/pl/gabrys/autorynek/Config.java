@@ -15,8 +15,8 @@ public class Config {
  public String priceRegex = "(?iu)^\\s*(?:»\\s*)?(?:cena(?: produktu)?|koszt)(?: za (?:calosc|całość|ofertę|oferte))?\\s*:\\s*\\$?\\s*([0-9][0-9., ]*)(k)?\\s*(?:\\(\\s*\\$\\s*([0-9][0-9.,]*)\\s*\\))?\\s*$";
  public boolean dark = true;
  public double scale = 1.0;
- public int delayMs = 150;
- public int stableMs = 700;
+ public int delayMs = 80;
+ public int stableMs = 350;
  // Sortowanie: "Najwyzszej ceny" to 2. klik od "Brak motywu", wiec po nim lista
  // zwykle sie jeszcze zmienia. Zeby nie zakonczyc na zlym sortowaniu, mod klika
  // dalej, dopoki lista sie zmienia (maks. pageWarmup razy), potem kupuje.
@@ -43,10 +43,14 @@ public class Config {
  public String sortItem = "minecraft:repeater";
  public int sortSlot = 52;
  public int sortClicks = 3;
+ // Ile razy wolno kliknac prawym w sortowanie, zanim sie poddamy.
+ public int sortMaxClicks = 8;
+ // Klikniecia "na slepo", gdy serwer nie podaje ktora pozycja jest zaznaczona.
+ public int sortBlindClicks = 3;
  // Tryb szybki: krotsze odstepy miedzy akcjami. Nadal czeka na zmiane ekranu.
  public boolean fastMode = true;
  // Tempo automatu: najmniejsze mozliwe do ustawienia przez uzytkownika.
- public int minDelayMs = 60;
+ public int minDelayMs = 50;
  public int maxDelayMs = 2000;
  // Napis na srodku ekranu: sekundy wyswietlania.
  public double hudSeconds = 1.0;
